@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">NCMultipeerChat</string>
+    <string name="title">Chat</string>
+    <string name="ok">OK</string>
+    <string name="username">Display Name</string>
+    <string name="server">Host</string>
+    <string name="client">Join</string>
+    <string name="serverorclient">Host or Join</string>
+    <string name="titleChatRoom">Chat Room</string>
+    <string name="sentto">Send To</string>
+    <string name="emptyplayer">-- Empty --</string>
+
+
+</resources>
