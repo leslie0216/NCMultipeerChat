@@ -1,11 +1,12 @@
 package com.nclab.ncmultipeerconnectivity;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
- * A peerID represents a device
+ * Peer IDs uniquely identify an app running on a device to nearby peers.
  */
-public class NCMCPeerID {
+public class NCMCPeerID implements Serializable{
     protected String identifier;
     protected String displayName;
 

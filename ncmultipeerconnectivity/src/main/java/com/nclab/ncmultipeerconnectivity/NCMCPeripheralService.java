@@ -1,7 +1,8 @@
 package com.nclab.ncmultipeerconnectivity;
 
 /**
- * Create a ble peripheral role
+ * Create a Bluetooth low energy peripheral role
+ * Tell nearby peers that your app is willing to join sessions of a specified type.
  */
 public class NCMCPeripheralService {
     public static final  int NCMCPeripheralService_ERROR_BLUETOOTH_OFF = 0;

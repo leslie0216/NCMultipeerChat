@@ -1,7 +1,8 @@
 package com.nclab.ncmultipeerconnectivity;
 
 /**
- * Create a ble central role
+ * Create a Bluetooth low energy central role.
+ * Let your app search programmatically for nearby devices with apps that support sessions of a particular type.
  */
 public class NCMCCentralService {
     public static final  int NCMCCentralService_ERROR_BLUETOOTH_OFF = 0;

@@ -24,6 +24,7 @@ public class LoginActivity extends Activity {
             public void onClick(View v) {
                 String user = getUserName();
                 if (!user.isEmpty() && user.length() >= 3 && user.length() <= 8) {
+                    MultiplayerController.getInstance().setLocalName(user);
 
                     Intent intent = new Intent();
                     intent.setClass(LoginActivity.this, SettingActivity.class);
@@ -40,6 +41,18 @@ public class LoginActivity extends Activity {
     public String getUserName() {
         TextView user = (TextView)this.findViewById(R.id.userName);
         return  user.getText().toString();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        MultiplayerController.getInstance().setContext(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        MultiplayerController.getInstance().setContext(null);
     }
 
     @Override

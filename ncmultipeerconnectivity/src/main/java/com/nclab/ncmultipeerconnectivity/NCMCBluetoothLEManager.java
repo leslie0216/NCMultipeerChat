@@ -41,7 +41,7 @@ import java.util.UUID;
  class NCMCBluetoothLEManager {
     //region CONSTANTS
     private static final String TAG = "NCMCBluetoothLEManager";
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 20000;
     private static final String TRANSFER_CHARACTERISTIC_MSG_FROM_PERIPHERAL_UUID = "B7020F32-5170-4F62-B078-E5C231B71B3F";
     private static final String TRANSFER_CHARACTERISTIC_MSG_FROM_CENTRAL_WITH_RESPONSE_UUID = "0E182478-7DC7-43D2-9B52-06FE34B325CE";
     private static final String TRANSFER_CHARACTERISTIC_MSG_FROM_CENTRAL_WITHOUT_RESPONSE_UUID = "541300E2-99C2-4319-A5B9-98E96053D2C9";
@@ -367,9 +367,10 @@ import java.util.UUID;
             mDiscoveredPeripherals = new Hashtable<>();
         }
 
-        mScanHandler = new Handler();
-
         this.mIsCentral = true;
+        this.mSession.setSelfAsCentral();
+
+        mScanHandler = new Handler();
 
         mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
         mScanSettings = new ScanSettings.Builder()
@@ -476,12 +477,12 @@ import java.util.UUID;
             @Override
             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    Log.d(TAG, "Connected to GATT periheral " + gatt.getDevice().getAddress());
+                    Log.d(TAG, "Connected to GATT peripheral " + gatt.getDevice().getAddress());
                     // Attempts to discover services after successful connection.
                     Log.d(TAG, "Attempting to start service discovery:" + gatt.discoverServices());
 
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    Log.d(TAG, "Disconnected from GATT peripheral : " + gatt.getDevice().getName());
+                    Log.d(TAG, "Disconnected from GATT peripheral : " + gatt.getDevice().getAddress());
                     NCMCPeripheralInfo info = mDiscoveredPeripherals.get(gatt.getDevice().getAddress());
                     if (info != null) {
 
@@ -870,6 +871,7 @@ import java.util.UUID;
                     Log.i(TAG, "Disconnected from central:" + device.getName() + " ,address:" + device.getAddress());
                     if (mConnectedCentrals.containsKey(device.getAddress())) {
                         mConnectedCentrals.remove(device.getAddress());
+                        mCentralMTUs.remove(device.getAddress());
 
                         if (mSession != null) {
                             mSession.onCentralDisconnected();

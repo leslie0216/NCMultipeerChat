@@ -9,6 +9,17 @@
     <string name="titleChatRoom">Chat Room</string>
     <string name="sentto">Send To</string>
     <string name="emptyplayer">-- Empty --</string>
-
+    <string name="startfailed">please check your bluetooth status</string>
+    <string name="periphfound">would like to join your game, do you accept?</string>
+    <string name="centralfoundp1">The game </string>
+    <string name="centralfoundp2"> was found,. Would you like to connect?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="scanfinish">Browsing finished, keep searching?</string>
+    <string name="waitingplayer">Waiting for player&#8230;</string>
+    <string name="waiting">Waiting&#8230;</string>
+    <string name="searchinggame">Searching for game&#8230;</string>
+    <string name="empty">--empty--</string>
+    <string name="readytogame">Ready to game</string>
 
 </resources>

@@ -20,7 +20,8 @@ public class SettingActivity extends Activity {
         btnServer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //GameManager.getInstance().setIsHost(true);
+                MultiplayerController.getInstance().setHost(true);
+                MultiplayerController.getInstance().createServerHostedGame();
                 gotoLobby();
             }
         });
@@ -30,7 +31,8 @@ public class SettingActivity extends Activity {
             btnClient.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //GameManager.getInstance().setIsHost(false);
+                    MultiplayerController.getInstance().setHost(false);
+                    MultiplayerController.getInstance().joinServerHostedGame();
                     gotoLobby();
                 }
             });
@@ -56,6 +58,18 @@ public class SettingActivity extends Activity {
         } else {
             return super.onKeyDown(keyCode, event);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        MultiplayerController.getInstance().setContext(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        MultiplayerController.getInstance().setContext(null);
     }
 
     private void gotoLobby() {

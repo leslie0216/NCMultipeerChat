@@ -1,6 +1,7 @@
 package com.nclab.ncmultipeerconnectivity;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -8,12 +9,22 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * A session is used to control the connection between devices
- * android.permission.ACCESS_COARSE_LOCATION and android.permission.ACCESS_FINE_LOCATION must be granted
+ * Session objects (NCMCSession) provide support for communication between connected peer devices.
+ * If your app creates a session, it can invite other peers to join it.
+ * Otherwise, your app can join a session when invited by another peer.
+ *
+ * NOTE :
+ * 1. Requires {@link android.Manifest.permission#BLUETOOTH_ADMIN} permission.
+ *
+ * 2. An app must hold
+ * {@link android.Manifest.permission#ACCESS_COARSE_LOCATION ACCESS_COARSE_LOCATION} or
+ * {@link android.Manifest.permission#ACCESS_FINE_LOCATION ACCESS_FINE_LOCATION} permission
+ *
+ * 3. serviceID must be a 36 bytes UUID. e.g. "E8D52AC1-F0E7-494E-BC27-7D92531E7A30"
  */
 
 public class NCMCSession {
-    private static final String TAG = "NCMCBluetoothLEManager";
+    private static final String TAG = "NCMCSession";
 
     public static final  int NCMCSessionStateNotConnected = 0;
     public static final  int NCMCSessionStateConnected = 1;
@@ -46,9 +57,13 @@ public class NCMCSession {
         NCMCBluetoothLEManager.getInstance().setContext(_context);
     }
 
-    public void diconnect() {
+    public void disconnect() {
         NCMCBluetoothLEManager.getInstance().disconnect();
         this.connectedDevices.clear();
+    }
+
+    public void setContext(Context _context) {
+        NCMCBluetoothLEManager.getInstance().setContext(_context);
     }
 
     public void sendData(byte[] data, List<NCMCPeerID> peerIDs, int mode) {
@@ -143,6 +158,8 @@ public class NCMCSession {
                 notifyPeerStateChanged(peerID, NCMCSessionStateNotConnected);
             }
         }
+
+        this.connectedDevices.clear();
     }
 
     protected void sendCentralConnectionRequestToPeer(NCMCPeerID peerID) {
@@ -229,6 +246,7 @@ public class NCMCSession {
         return result;
     }
 
+    @Nullable
     private byte[] packUserMessage(byte[] msg, NCMCPeerID peerID) {
         NCMCDeviceInfo targetDevice = this.connectedDevices.get(peerID.identifier);
         if (targetDevice != null) {
@@ -245,7 +263,7 @@ public class NCMCSession {
         return null;
     }
 
-    protected void onDataReceived(byte[] data, String fromIdentifer) {
+    protected void onDataReceived(byte[] data, String fromIdentifier) {
         if (data != null && data.length >= 3) {
             char isSysMsg = (char)data[0];
             char extraInfo = (char)data[1];
@@ -262,8 +280,8 @@ public class NCMCSession {
 
                         // disconnect to peripheral
                         if (NCMCBluetoothLEManager.getInstance().isCentral()) {
-                            NCMCBluetoothLEManager.getInstance().disconnectToPeripheral(fromIdentifer);
-                            this.connectedDevices.remove(fromIdentifer);// may be we don't need to do this
+                            NCMCBluetoothLEManager.getInstance().disconnectToPeripheral(fromIdentifier);
+                            this.connectedDevices.remove(fromIdentifier);// may be we don't need to do this
                         }
                         break;
                     }
@@ -273,11 +291,11 @@ public class NCMCSession {
 
                         // assign peripheral info to peripheral
                         NCMCDeviceInfo peripheralDevice = decodeDeviceInfo(dataMsg);
-                        peripheralDevice.identifier = fromIdentifer;
+                        peripheralDevice.identifier = fromIdentifier;
                         peripheralDevice.uniqueID = (char)(this.connectedDevices.size() + 1);// id 0 is reserved for central
                         byte[] deviceData = encodeDeviceInfo(peripheralDevice);
                         byte[] sysData = packSystemMessage(SYSMSG_CENTRAL_PERIPHERAL_ASSIGN_IDENTIFIER, deviceData);
-                        NCMCBluetoothLEManager.getInstance().sendCentralDataToPeripheral(sysData, fromIdentifer, NCMCSessionSendDataReliable);
+                        NCMCBluetoothLEManager.getInstance().sendCentralDataToPeripheral(sysData, fromIdentifier, NCMCSessionSendDataReliable);
 
                         // update new connected device info to all connected peripherals
                         byte[] sysBroadcastNewDeviceData = packSystemMessage(SYSMSG_CENTRAL_PERIPHERAL_DEVICE_CONNECTED, deviceData);
@@ -292,11 +310,11 @@ public class NCMCSession {
                             if (peripheralDeviceInfo.uniqueID != 0) {
                                 byte[] peripheralDeviceData = encodeDeviceInfo(peripheralDeviceInfo);
                                 byte[] sysBroadcastData = packSystemMessage(SYSMSG_CENTRAL_PERIPHERAL_DEVICE_CONNECTED, peripheralDeviceData);
-                                NCMCBluetoothLEManager.getInstance().sendCentralDataToPeripheral(sysBroadcastData, fromIdentifer, NCMCSessionSendDataReliable);
+                                NCMCBluetoothLEManager.getInstance().sendCentralDataToPeripheral(sysBroadcastData, fromIdentifier, NCMCSessionSendDataReliable);
                             }
                         }
 
-                        this.connectedDevices.put(fromIdentifer, peripheralDevice);
+                        this.connectedDevices.put(fromIdentifier, peripheralDevice);
 
                         // send connection status notification
                         NCMCPeerID peerID =  new NCMCPeerID(peripheralDevice.name, peripheralDevice.identifier);
@@ -311,12 +329,12 @@ public class NCMCSession {
                         if (!getCentralDeviceIdentifier().equalsIgnoreCase("")) {
                             // refuse connection directly when another central is being processed
                             byte[] sysData = packSystemMessage(SYSMSG_PERIPHERAL_CENTRAL_REFUSE_INVITATION, null);
-                            NCMCBluetoothLEManager.getInstance().sendPeripheralDataToCentral(sysData, fromIdentifer);
+                            NCMCBluetoothLEManager.getInstance().sendPeripheralDataToCentral(sysData, fromIdentifier);
                         }
 
                         NCMCDeviceInfo centralDevice = decodeDeviceInfo(dataMsg);
                         if (centralDevice.uniqueID == 0) {
-                            centralDevice.identifier = fromIdentifer; // set with its real identifier
+                            centralDevice.identifier = fromIdentifier; // set with its real identifier
                         }
 
                         // save central device
@@ -378,9 +396,9 @@ public class NCMCSession {
                 if (NCMCBluetoothLEManager.getInstance().isCentral()) {
                     if (extraInfo == 0) {
                         // data from peripheral to central
-                        NCMCDeviceInfo deviceInfo = this.connectedDevices.get(fromIdentifer);
+                        NCMCDeviceInfo deviceInfo = this.connectedDevices.get(fromIdentifier);
                         if (deviceInfo != null) {
-                            NCMCPeerID peerID = new NCMCPeerID(deviceInfo.name, fromIdentifer);
+                            NCMCPeerID peerID = new NCMCPeerID(deviceInfo.name, fromIdentifier);
                             notifyDidReceiveData(dataMsg, peerID);
                         }
                     } else {
