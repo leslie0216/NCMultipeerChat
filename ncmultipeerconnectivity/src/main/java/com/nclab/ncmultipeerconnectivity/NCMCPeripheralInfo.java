@@ -1,5 +1,6 @@
 package com.nclab.ncmultipeerconnectivity;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 
@@ -13,4 +14,5 @@ class NCMCPeripheralInfo {
     public BluetoothGattCharacteristic writeWithoutResponseCharacteristic;
     public String name;
     public int mtu;
+    public BluetoothDevice device;
 }

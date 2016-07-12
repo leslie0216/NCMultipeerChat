@@ -111,7 +111,9 @@ public class MultiplayerController {
 
     public void setContext(Context _context) {
         this.context = _context;
-        this.currentSession.setContext(_context);
+        if (this.currentSession != null) {
+            this.currentSession.setContext(_context);
+        }
     }
 
     private void broadcastStatus(String action) {
@@ -139,7 +141,7 @@ public class MultiplayerController {
 
         String uuid = UUID.randomUUID().toString();
         String suuid = uuid.substring(24);
-        String displayName = suuid + uuid;
+        String displayName = suuid + localName;
 
         NCMCPeerID peerID = new NCMCPeerID(displayName);
         this.currentSession = new NCMCSession(peerID, TRANSFER_SERVICE_UUID, this.context);

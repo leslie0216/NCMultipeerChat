@@ -354,6 +354,8 @@ import java.util.UUID;
 /***********************************************************************/
     public boolean setupCentralEnv(NCMCCentralService service) {
         this.mCentralService = service;
+        this.mIsCentral = true;
+
         if (!setup()) {
             if (this.mCentralService != null) {
                 this.mCentralService.notifyDidNotStartBrowsingForPeers(NCMCCentralService.NCMCCentralService_ERROR_UNKNOWN);
@@ -367,7 +369,6 @@ import java.util.UUID;
             mDiscoveredPeripherals = new Hashtable<>();
         }
 
-        this.mIsCentral = true;
         this.mSession.setSelfAsCentral();
 
         mScanHandler = new Handler();
@@ -413,7 +414,7 @@ import java.util.UUID;
                         }
                     }
 
-                    if (isFound) {
+                    if (isFound && !mDiscoveredPeripherals.containsKey(device.getAddress())) {
                         Log.d(TAG, "onScanResult: new device found : " + device.getName() + " with rssi : " + result.getRssi());
                         NCMCPeripheralInfo info = new NCMCPeripheralInfo();
                         info.bluetoothGatt = null;
@@ -422,6 +423,7 @@ import java.util.UUID;
                         info.writeWithResponseCharacteristic = null;
                         info.writeWithoutResponseCharacteristic = null;
                         info.mtu = DEFAULT_MTU;
+                        info.device = device;
                         mDiscoveredPeripherals.put(device.getAddress(), info);
 
                         NCMCPeerID peerID = new NCMCPeerID(device.getName(), device.getAddress());
@@ -429,8 +431,8 @@ import java.util.UUID;
                             mCentralService.notifyFoundPeer(peerID);
                         }
                         // stop scan
-                        //m_isScanningOrAdvertising = false;
-                        //m_LEScanner.stopScan(m_scanCallback);
+                        mIsBrowsingOrAdvertising = false;
+                        stopBrowsing();
                         //broadcastStatus(BLE_CONNECTION_AUTO_STOP_SCAN_ACTION);
 
                         // connect to peripheral
@@ -673,12 +675,12 @@ import java.util.UUID;
 
     private void connectToPeripheral(NCMCPeripheralInfo info) {
         if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.M) {
-            info.bluetoothGatt = info.bluetoothGatt.getDevice().connectGatt(mContext, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
+            info.bluetoothGatt = info.device.connectGatt(mContext, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
         } else {
             try {
-                Method m = info.bluetoothGatt.getDevice().getClass().getDeclaredMethod("connectGatt", Context.class, boolean.class, BluetoothGattCallback.class, int.class);
-                int transport = info.bluetoothGatt.getDevice().getClass().getDeclaredField("TRANSPORT_LE").getInt(null);     // LE = 2, BREDR = 1, AUTO = 0
-                info.bluetoothGatt = (BluetoothGatt) m.invoke(info.bluetoothGatt.getDevice(), mContext, false, mGattCallback, transport);
+                Method m = info.device.getClass().getDeclaredMethod("connectGatt", Context.class, boolean.class, BluetoothGattCallback.class, int.class);
+                int transport = info.device.getClass().getDeclaredField("TRANSPORT_LE").getInt(null);     // LE = 2, BREDR = 1, AUTO = 0
+                info.bluetoothGatt = (BluetoothGatt) m.invoke(info.device, mContext, false, mGattCallback, transport);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
