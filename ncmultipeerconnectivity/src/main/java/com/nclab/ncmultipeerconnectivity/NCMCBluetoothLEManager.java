@@ -561,6 +561,7 @@ import java.util.UUID;
                 try {
 
                     synchronized (mMessageSendQueue) {
+                        Log.d(TAG, "onCharacteristicWrite: current queue size:"+mMessageSendQueue.size());
                         mMessageSendQueue.remove(0);
                         if (mMessageSendQueue.size() != 0) {
                             executeSendCentralData();
@@ -714,6 +715,9 @@ import java.util.UUID;
         if (info != null) {
             if (info.bluetoothGatt != null) {
                 synchronized (this.mMessageSendQueue) {
+                    Log.d(TAG, "sendCentralDataToPeripheral: current queue size:"+this.mMessageSendQueue.size());
+                    boolean shouldExecute = this.mMessageSendQueue.size() == 0;
+
                     List<byte[]> msgs = makeMsg(message, MAX_MTU);
 
                     for (byte[] msg : msgs) {
@@ -721,14 +725,18 @@ import java.util.UUID;
                         msgData.addData(msg);
                         this.mMessageSendQueue.add(msgData);
                     }
+
+                    if (shouldExecute) {
+                        executeSendCentralData(); // trigger execute write when this is the first message in the queue.
+                    }
                 }
-                executeSendCentralData();
             }
         }
     }
 
     private void executeSendCentralData() {
         synchronized (this.mMessageSendQueue) {
+            Log.d(TAG, "executeSendCentralData: current queue size:"+this.mMessageSendQueue.size());
             if (this.mMessageSendQueue.size() != 0) {
                 NCMCMessageData msgInfo = this.mMessageSendQueue.get(0);
                 NCMCPeripheralInfo targetInfo = this.mDiscoveredPeripherals.get(msgInfo.getDeviceUUID());
@@ -739,13 +747,13 @@ import java.util.UUID;
                         targetInfo.writeWithoutResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                         targetInfo.writeWithResponseCharacteristic.setValue(dataToSend);
                         targetInfo.bluetoothGatt.writeCharacteristic(targetInfo.writeWithResponseCharacteristic);
-                        Log.d(TAG, "sendDataToPeripheralsWithResponse: byteMsg size :" + dataToSend.length);
+                        Log.d(TAG, "sendDataToPeripheral: "+targetInfo.device.getAddress()+" WithResponse: byteMsg size :" + dataToSend.length);
 
                     } else if (!msgInfo.isReliable && targetInfo.writeWithoutResponseCharacteristic != null) {
                         targetInfo.writeWithoutResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE); // android sys will call "onCharacteristicWrite" immediately
                         targetInfo.writeWithoutResponseCharacteristic.setValue(dataToSend);
                         targetInfo.bluetoothGatt.writeCharacteristic(targetInfo.writeWithoutResponseCharacteristic);
-                        Log.d(TAG, "sendDataToPeripheralsWithoutResponse: byteMsg size :" + dataToSend.length);
+                        Log.d(TAG, "sendDataToPeripheral: "+targetInfo.device.getAddress()+" WithOutResponse: byteMsg size :" + dataToSend.length);
                     }
                 }
             }
@@ -935,12 +943,14 @@ import java.util.UUID;
                 super.onNotificationSent(device, status);
                 Log.d(TAG, "onNotificationSent to " + device.getName() + " status : " + status);
                 synchronized (mMessageSendQueue) {
-                    if (status == BluetoothGatt.GATT_SUCCESS && mMessageSendQueue.size() != 0) {
+                    Log.d(TAG, "onNotificationSent: current queue size:"  + mMessageSendQueue.size());
+                    if (mMessageSendQueue.size() != 0) {
                         mMessageSendQueue.remove(0);
                     }
-                }
-                if (mMessageSendQueue.size() != 0) {
-                    executeSendPeripheralData();
+
+                    if (mMessageSendQueue.size() != 0) {
+                        executeSendPeripheralData();
+                    }
                 }
             }
 
@@ -1026,19 +1036,26 @@ import java.util.UUID;
         if (mSendCharacteristic != null && centralDevice != null && centralMtu != null) {
             List<byte[]> msgs = makeMsg(message, centralMtu);
             synchronized (mMessageSendQueue) {
+                Log.d(TAG, "sendPeripheralDataToCentral: current queue size:"  + mMessageSendQueue.size());
+                boolean shouldExecute = this.mMessageSendQueue.size() == 0;
+
                 for (byte[] msg : msgs) {
                     NCMCMessageData msgData = new NCMCMessageData(centralAddress, true);
                     msgData.addData(msg);
                     this.mMessageSendQueue.add(msgData);
                 }
+
+                if (shouldExecute) {
+                    executeSendPeripheralData();
+                }
             }
 
-            executeSendPeripheralData();
         }
     }
 
     private void executeSendPeripheralData() {
         synchronized (mMessageSendQueue) {
+            Log.d(TAG, "executeSendPeripheralData: current queue size:"  + mMessageSendQueue.size());
             if (mMessageSendQueue.size() != 0 && mBluetoothGattServer != null) {
                 NCMCMessageData msgInfo = this.mMessageSendQueue.get(0);
                 BluetoothDevice centralDevice = this.mConnectedCentrals.get(msgInfo.getDeviceUUID());
