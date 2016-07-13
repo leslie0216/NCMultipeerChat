@@ -407,7 +407,7 @@ import java.util.UUID;
 
                     boolean isFound = false;
                     for (ParcelUuid uuid : serviceUUIDs) {
-                        Log.d(TAG, "UUUUID: " + uuid.toString());
+                        //Log.d(TAG, "UUUUID: " + uuid.toString());
                         if (uuid.toString().equalsIgnoreCase(mSession.serviceID)) {
                             isFound = true;
                             break;
@@ -670,6 +670,7 @@ import java.util.UUID;
     }
 
     private void connectToPeripheral(NCMCPeripheralInfo info) {
+        Log.d(TAG, "connectToPeripheral: " + info.name + " deviceAddress: " + info.device.getAddress());
         if (Build.VERSION.SDK_INT>= Build.VERSION_CODES.M) {
             info.bluetoothGatt = info.device.connectGatt(mContext, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
         } else {

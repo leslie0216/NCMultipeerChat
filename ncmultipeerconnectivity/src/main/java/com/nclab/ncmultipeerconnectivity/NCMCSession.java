@@ -138,7 +138,7 @@ public class NCMCSession {
                 byte[] deviceData = encodeDeviceInfo(info);
                 byte[] sysData = packSystemMessage(SYSMSG_CENTRAL_PERIPHERAL_DEVICE_DISCONNECTED, deviceData);
                 for (NCMCDeviceInfo peripheralInfo : this.connectedDevices) {
-                    if (peripheralInfo.uniqueID != 0) {
+                    if (peripheralInfo.uniqueID != 0 && peripheralInfo.uniqueID != info.uniqueID) {
                         NCMCBluetoothLEManager.getInstance().sendCentralDataToPeripheral(sysData, peripheralInfo.identifier, NCMCSessionSendDataReliable);
                     }
                 }

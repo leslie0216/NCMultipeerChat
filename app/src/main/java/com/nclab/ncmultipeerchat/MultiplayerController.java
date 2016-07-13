@@ -204,6 +204,7 @@ public class MultiplayerController {
                             if (stringForMCPeerDisplayName(pid.getDisplayName()).equalsIgnoreCase(stringForMCPeerDisplayName(peerID.getDisplayName()))) {
                                 currentSessionPlayerIDs.remove(pid);
                                 broadcastStatus(BLE_BROADCAST_UPDATE_PLAYERLIST);
+                                break;
                             }
 
                         }
