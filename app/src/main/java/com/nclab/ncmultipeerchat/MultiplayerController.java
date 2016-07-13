@@ -89,10 +89,6 @@ public class MultiplayerController {
         return currentSessionPlayerIDs;
     }
 
-    public void setCurrentSessionPlayerIDs(List<NCMCPeerID> currentSessionPlayerIDs) {
-        this.currentSessionPlayerIDs = currentSessionPlayerIDs;
-    }
-
     public boolean isHost() {
         return isHost;
     }
@@ -289,25 +285,25 @@ public class MultiplayerController {
     }
 
     public void startHost() {
-        if (this.isHost) {
+        if (this.isHost && this.currentCentralService != null) {
             this.currentCentralService.startBrowsingForPeers();
         }
     }
 
     public void startClient() {
-        if (!this.isHost) {
+        if (!this.isHost && this.currentPeripheralService != null) {
             this.currentPeripheralService.startAdvertisingPeer();
         }
     }
 
     public void stopHost() {
-        if (this.isHost) {
+        if (this.isHost && this.currentCentralService != null) {
             this.currentCentralService.stopBrowsingForPeers();
         }
     }
 
     public void stopClient() {
-        if (!this.isHost) {
+        if (!this.isHost && this.currentPeripheralService != null) {
             this.currentPeripheralService.stopAdvertisingPeer();
         }
     }

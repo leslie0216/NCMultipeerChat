@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageButton;
@@ -118,6 +119,10 @@ public class LobbyActivity extends Activity {
                     goToChat();
                     break;
                 }
+                case MultiplayerController.BLE_BROADCAST_UPDATE_PLAYERLIST:{
+                    updateUI();
+                    break;
+                }
             }
         }
     };
@@ -170,6 +175,7 @@ public class LobbyActivity extends Activity {
 
         m_intentFilter.addAction(MultiplayerController.BLE_BROADCAST_GO_TO_CHATROOM);
         m_intentFilter.addAction(MultiplayerController.BLE_BROADCAST_START_FAILED);
+        m_intentFilter.addAction(MultiplayerController.BLE_BROADCAST_UPDATE_PLAYERLIST);
     }
 
     @Override
@@ -194,8 +200,7 @@ public class LobbyActivity extends Activity {
             MultiplayerController.getInstance().startClient();
         }
 
-        mTickHandler.postDelayed(mTickRunnable, 100);
-
+        updateUI();
     }
 
     @Override
@@ -209,8 +214,6 @@ public class LobbyActivity extends Activity {
         } else {
             MultiplayerController.getInstance().stopClient();
         }
-
-        mTickHandler.removeCallbacks(mTickRunnable);
     }
 
     private void backToSettingActivity() {
@@ -229,49 +232,41 @@ public class LobbyActivity extends Activity {
         LobbyActivity.this.finish();
     }
 
-    private Runnable mTickRunnable = new Runnable() {
-        @Override
-        public void run() {
-            // update UI
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    resetUI();
-                    List<NCMCPeerID> playerData = MultiplayerController.getInstance().getCurrentSessionPlayerIDs();
-                    for (int i=0; i<playerData.size(); ++i) {
-                        NCMCPeerID pid = playerData.get(i);
-                        if (i == 0) {
-                            txtPlayer1.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
-                            txtPlayer1.setTextColor(Color.WHITE);
-                        }
-                        if (i == 1) {
-                            txtPlayer2.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
-                            txtPlayer2.setTextColor(Color.WHITE);
-                        }
-                        if (i == 2) {
-                            txtPlayer3.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
-                            txtPlayer3.setTextColor(Color.WHITE);
-                        }
-                        if (i == 3) {
-                            txtPlayer4.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
-                            txtPlayer4.setTextColor(Color.WHITE);
-                        }
-                    }
-
-                    if (playerData.size() >= 2) {
-                        lbMsg.setText(getResources().getString(R.string.readytogame));
-                        if (MultiplayerController.getInstance().isHost()) {
-                            btnStartGame.setEnabled(true);
-                        }
-                    } else {
-                        if (MultiplayerController.getInstance().isHost()) {
-                            btnStartGame.setEnabled(false);
-                        }
-                    }
-                }
-            });
+    private void updateUI() {
+        resetUI();
+        List<NCMCPeerID> playerData = MultiplayerController.getInstance().getCurrentSessionPlayerIDs();
+        Log.d("LobbyActivity", "updateUI: player count = " + playerData.size());
+        for (int i=0; i<playerData.size(); ++i) {
+            NCMCPeerID pid = playerData.get(i);
+            if (i == 0) {
+                txtPlayer1.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
+                txtPlayer1.setTextColor(Color.WHITE);
+            }
+            if (i == 1) {
+                txtPlayer2.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
+                txtPlayer2.setTextColor(Color.WHITE);
+            }
+            if (i == 2) {
+                txtPlayer3.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
+                txtPlayer3.setTextColor(Color.WHITE);
+            }
+            if (i == 3) {
+                txtPlayer4.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
+                txtPlayer4.setTextColor(Color.WHITE);
+            }
         }
-    };
+
+        if (playerData.size() >= 2) {
+            lbMsg.setText(getResources().getString(R.string.readytogame));
+            if (MultiplayerController.getInstance().isHost()) {
+                btnStartGame.setEnabled(true);
+            }
+        } else {
+            if (MultiplayerController.getInstance().isHost()) {
+                btnStartGame.setEnabled(false);
+            }
+        }
+    }
 
     private void resetUI() {
         if (MultiplayerController.getInstance().isHost()) {

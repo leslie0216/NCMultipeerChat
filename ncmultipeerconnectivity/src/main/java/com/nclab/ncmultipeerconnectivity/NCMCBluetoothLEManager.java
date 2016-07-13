@@ -426,18 +426,13 @@ import java.util.UUID;
                         info.device = device;
                         mDiscoveredPeripherals.put(device.getAddress(), info);
 
-                        NCMCPeerID peerID = new NCMCPeerID(device.getName(), device.getAddress());
+                        NCMCPeerID peerID = new NCMCPeerID(device.getName(), device.getAddress(), (char)-1);
                         if (mCentralService != null) {
                             mCentralService.notifyFoundPeer(peerID);
                         }
                         // stop scan
-                        mIsBrowsingOrAdvertising = false;
-                        stopBrowsing();
-                        //broadcastStatus(BLE_CONNECTION_AUTO_STOP_SCAN_ACTION);
-
-                        // connect to peripheral
-                        //broadcastStatus(BLE_CONNECTION_UPDATE_ACTION, "connecting to : " + device.getName());
-                        //connectToPeripheral(device, info);
+                        //mIsBrowsingOrAdvertising = false;
+                        //stopBrowsing();
                     }
                 } catch (NullPointerException ex) {
                     ex.printStackTrace();
@@ -466,7 +461,7 @@ import java.util.UUID;
     private void notifyConnectionError(BluetoothGatt gatt) {
         NCMCPeripheralInfo info = mDiscoveredPeripherals.get(gatt.getDevice().getAddress());
         if (mCentralService != null) {
-            NCMCPeerID peerID = new NCMCPeerID(info.name, gatt.getDevice().getAddress());
+            NCMCPeerID peerID = new NCMCPeerID(info.name, gatt.getDevice().getAddress(), (char)-1);
             mCentralService.notifyLostPeer(peerID);
         }
         mDiscoveredPeripherals.remove(gatt.getDevice().getAddress());
@@ -614,7 +609,7 @@ import java.util.UUID;
                         mDiscoveredPeripherals.put(gatt.getDevice().getAddress(), info);
 
                         // send central info to peripheral and wait for peripheral confirm the connection
-                        NCMCPeerID peerID = new NCMCPeerID(info.name, gatt.getDevice().getAddress());
+                        NCMCPeerID peerID = new NCMCPeerID(info.name, gatt.getDevice().getAddress(), (char)-1);
                         if (mSession != null) {
                             mSession.sendCentralConnectionRequestToPeer(peerID);
                         }
@@ -747,11 +742,10 @@ import java.util.UUID;
                         Log.d(TAG, "sendDataToPeripheralsWithResponse: byteMsg size :" + dataToSend.length);
 
                     } else if (!msgInfo.isReliable && targetInfo.writeWithoutResponseCharacteristic != null) {
-                        targetInfo.writeWithoutResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                        targetInfo.writeWithoutResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE); // android sys will call "onCharacteristicWrite" immediately
                         targetInfo.writeWithoutResponseCharacteristic.setValue(dataToSend);
                         targetInfo.bluetoothGatt.writeCharacteristic(targetInfo.writeWithoutResponseCharacteristic);
                         Log.d(TAG, "sendDataToPeripheralsWithoutResponse: byteMsg size :" + dataToSend.length);
-                        // TODO: 16-07-08 test if onCharacteristicWrite() would be called with WRITE_TYPE_NO_RESPONSE
                     }
                 }
             }

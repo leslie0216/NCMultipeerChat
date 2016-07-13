@@ -67,6 +67,7 @@ public class ChatActivity extends Activity {
         setContentView(R.layout.activity_chat);
 
         txtChatHist = (TextView)this.findViewById(R.id.txtChatHist);
+        txtChatHist.setText("");
         txtPlayer1 = (TextView)this.findViewById(R.id.txtSendToPlayer1);
         txtPlayer2 = (TextView)this.findViewById(R.id.txtSendToPlayer2);
         txtPlayer3 = (TextView)this.findViewById(R.id.txtSendToPlayer3);
@@ -161,7 +162,7 @@ public class ChatActivity extends Activity {
         txtPlayer3.setText(getResources().getString(R.string.empty));
         btnSendTo3.setEnabled(false);
 
-        txtLocalPlayer.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(MultiplayerController.getInstance().getLocalName()));
+        txtLocalPlayer.setText(MultiplayerController.getInstance().getLocalName());
         txtLocalPlayer.setTextColor(Color.WHITE);
     }
 
@@ -170,7 +171,7 @@ public class ChatActivity extends Activity {
         List<NCMCPeerID> playerData = MultiplayerController.getInstance().getCurrentSessionPlayerIDs();
         int i = 0;
         for (NCMCPeerID pid : playerData) {
-            if (!pid.getDisplayName().equalsIgnoreCase(MultiplayerController.getInstance().getLocalName())) {
+            if (!MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()).equalsIgnoreCase(MultiplayerController.getInstance().getLocalName())) {
                 if (i == 0) {
                     txtPlayer1.setText(MultiplayerController.getInstance().stringForMCPeerDisplayName(pid.getDisplayName()));
                     txtPlayer1.setTextColor(Color.WHITE);

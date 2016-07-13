@@ -43,8 +43,8 @@
         android:textSize="20sp" />
 
     <Button
-        android:layout_width="80dp"
-        android:layout_height="70dp"
+        android:layout_width="80sp"
+        android:layout_height="70sp"
         android:text="@string/sentto"
         android:id="@+id/btnSendTo1"
         android:background="@drawable/buttonblankblue"
@@ -58,14 +58,14 @@
         android:layout_height="wrap_content"
         android:text="@string/emptyplayer"
         android:id="@+id/txtSendToPlayer1"
-        android:textSize="28sp"
+        android:textSize="20sp"
         android:layout_marginTop="20dp"
         android:layout_marginStart="100dp"
         android:layout_below="@+id/txtChatMsg" />
 
     <Button
-        android:layout_width="80dp"
-        android:layout_height="70dp"
+        android:layout_width="80sp"
+        android:layout_height="70sp"
         android:text="@string/sentto"
         android:id="@+id/btnSendTo2"
         android:background="@drawable/buttonblankblue"
@@ -80,14 +80,14 @@
         android:layout_height="wrap_content"
         android:text="@string/emptyplayer"
         android:id="@+id/txtSendToPlayer2"
-        android:textSize="28sp"
+        android:textSize="20sp"
         android:layout_marginTop="100dp"
         android:layout_marginStart="100dp"
         android:layout_below="@+id/txtChatMsg" />
 
     <Button
-        android:layout_width="80dp"
-        android:layout_height="70dp"
+        android:layout_width="80sp"
+        android:layout_height="70sp"
         android:text="@string/sentto"
         android:id="@+id/btnSendTo3"
         android:background="@drawable/buttonblankblue"
@@ -102,7 +102,7 @@
         android:layout_height="wrap_content"
         android:text="@string/emptyplayer"
         android:id="@+id/txtSendToPlayer3"
-        android:textSize="28sp"
+        android:textSize="20sp"
         android:layout_marginTop="180dp"
         android:layout_marginStart="100dp"
         android:layout_below="@+id/txtChatMsg" />

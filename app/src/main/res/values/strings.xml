@@ -7,7 +7,7 @@
     <string name="client">Join</string>
     <string name="serverorclient">Host or Join</string>
     <string name="titleChatRoom">Chat Room</string>
-    <string name="sentto">Send To</string>
+    <string name="sentto">To</string>
     <string name="emptyplayer">-- Empty --</string>
     <string name="startfailed">please check your bluetooth status</string>
     <string name="periphfound">would like to join your game, do you accept?</string>
