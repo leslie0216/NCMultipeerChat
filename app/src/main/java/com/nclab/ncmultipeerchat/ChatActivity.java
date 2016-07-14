@@ -80,10 +80,6 @@ public class ChatActivity extends Activity {
                 String msg = getChatMsg();
                 if (msg.length() > 0) {
                     MultiplayerController.getInstance().sendDataToPeer(msg.getBytes(), txtPlayer1.getText().toString(), NCMCSession.NCMCSessionSendDataUnreliable);
-                    MultiplayerController.getInstance().sendDataToPeer(msg.getBytes(), txtPlayer1.getText().toString(), NCMCSession.NCMCSessionSendDataUnreliable);
-                    MultiplayerController.getInstance().sendDataToPeer(msg.getBytes(), txtPlayer1.getText().toString(), NCMCSession.NCMCSessionSendDataUnreliable);
-                    MultiplayerController.getInstance().sendDataToPeer(msg.getBytes(), txtPlayer1.getText().toString(), NCMCSession.NCMCSessionSendDataUnreliable);
-                    MultiplayerController.getInstance().sendDataToPeer(msg.getBytes(), txtPlayer1.getText().toString(), NCMCSession.NCMCSessionSendDataUnreliable);
                 }
             }
         });

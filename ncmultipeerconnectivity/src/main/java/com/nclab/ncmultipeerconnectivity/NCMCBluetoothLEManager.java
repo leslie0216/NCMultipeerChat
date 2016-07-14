@@ -34,6 +34,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manage the ble connection
@@ -61,7 +62,6 @@ import java.util.UUID;
     private boolean mIsBrowsingOrAdvertising;
     //private boolean mIsInit = false;
     private List<NCMCMessageData> mReceivedMsgArray = new ArrayList<>();
-    private final List<NCMCMessageData> mMessageSendQueue = new LinkedList<>();
     //endregion
 
     //region CENTRAL VARS
@@ -73,6 +73,7 @@ import java.util.UUID;
     private ScanCallback mScanCallback;
     private BluetoothGattCallback mGattCallback;
     private Hashtable<String, NCMCPeripheralInfo> mDiscoveredPeripherals = null; // key:device address/identifier
+    private ConcurrentHashMap<String, List<NCMCMessageData>> mMessageSendMap = new ConcurrentHashMap<>();
     //endregion
 
     //region PERIPHERAL VARS
@@ -89,6 +90,7 @@ import java.util.UUID;
     private BluetoothGattCharacteristic mReceiveWithResponseCharacteristic; // message from central to peripheral
     private BluetoothGattCharacteristic mReceiveWithoutResponseCharacteristic;
     private List<NCMCPeripheralWriteRequestData> mWriteList = new ArrayList<>();
+    private final List<NCMCMessageData> mMessageSendQueue = new LinkedList<>();
     //endregion
 
     private static NCMCBluetoothLEManager ourInstance = new NCMCBluetoothLEManager();
@@ -138,6 +140,14 @@ import java.util.UUID;
 
         synchronized (this.mMessageSendQueue) {
             this.mMessageSendQueue.clear();
+        }
+
+        if (this.mMessageSendMap != null) {
+            for (List<NCMCMessageData> queue : this.mMessageSendMap.values()) {
+                queue.clear();
+            }
+
+            this.mMessageSendMap.clear();
         }
 
         this.mCentralService = null;
@@ -465,6 +475,9 @@ import java.util.UUID;
             mCentralService.notifyLostPeer(peerID);
         }
         mDiscoveredPeripherals.remove(gatt.getDevice().getAddress());
+        if (mMessageSendMap.containsKey(gatt.getDevice().getAddress())) {
+            mMessageSendMap.remove(gatt.getDevice().getAddress());
+        }
         gatt.disconnect();
         gatt.close();
     }
@@ -488,6 +501,9 @@ import java.util.UUID;
                         }
 
                         mDiscoveredPeripherals.remove(gatt.getDevice().getAddress());
+                        if (mMessageSendMap.containsKey(gatt.getDevice().getAddress())) {
+                            mMessageSendMap.remove(gatt.getDevice().getAddress());
+                        }
                         gatt.disconnect();
                         gatt.close();
                     }
@@ -559,15 +575,18 @@ import java.util.UUID;
                 super.onCharacteristicWrite(gatt, characteristic, status);
                 Log.d(TAG, "onCharacteristicWrite: " + characteristic.getUuid().toString() + " device = " + gatt.getDevice().getAddress() + " status = " + status);
                 try {
+                    String deviceAddress = gatt.getDevice().getAddress();
+                    if (mMessageSendMap.containsKey(deviceAddress)) {
+                        List<NCMCMessageData> messageQueue = mMessageSendMap.get(deviceAddress);
 
-                    synchronized (mMessageSendQueue) {
-                        Log.d(TAG, "onCharacteristicWrite: current queue size:"+mMessageSendQueue.size());
-                        mMessageSendQueue.remove(0);
-                        if (mMessageSendQueue.size() != 0) {
-                            executeSendCentralData();
+                        if (messageQueue != null) {
+                            Log.d(TAG, "onCharacteristicWrite: "+ deviceAddress + " current queue size:" + messageQueue.size());
+                            messageQueue.remove(0);
+                            if (mMessageSendMap.get(deviceAddress).size() != 0) {
+                                executeSendCentralData(deviceAddress);
+                            }
                         }
                     }
-
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -711,35 +730,41 @@ import java.util.UUID;
         }
     }
 
-    public void sendCentralDataToPeripheral(byte[] message, String address, int mode) {
+    public synchronized void sendCentralDataToPeripheral(byte[] message, String address, int mode) {
         NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(address);
         if (info != null) {
             if (info.bluetoothGatt != null) {
-                synchronized (this.mMessageSendQueue) {
-                    Log.d(TAG, "sendCentralDataToPeripheral: current queue size:"+this.mMessageSendQueue.size());
-                    boolean shouldExecute = this.mMessageSendQueue.size() == 0;
+                if (!this.mMessageSendMap.containsKey(address)) {
+                    mMessageSendMap.put(address, new LinkedList<NCMCMessageData>());
+                }
 
-                    List<byte[]> msgs = makeMsg(message, MAX_MTU);
+                List<byte[]> msgs = makeMsg(message, MAX_MTU);
+                List<NCMCMessageData> tmpMessageQueue = new LinkedList<>();
 
-                    for (byte[] msg : msgs) {
-                        NCMCMessageData msgData = new NCMCMessageData(info.bluetoothGatt.getDevice().getAddress(), mode == NCMCSession.NCMCSessionSendDataReliable);
-                        msgData.addData(msg);
-                        this.mMessageSendQueue.add(msgData);
-                    }
+                for (byte[] msg : msgs) {
+                    NCMCMessageData msgData = new NCMCMessageData(address, mode == NCMCSession.NCMCSessionSendDataReliable);
+                    msgData.addData(msg);
+                    tmpMessageQueue.add(msgData);
+                }
 
-                    if (shouldExecute) {
-                        executeSendCentralData(); // trigger execute write when this is the first message in the queue.
-                    }
+                List<NCMCMessageData> messageQueue = this.mMessageSendMap.get(address);
+                Log.d(TAG, "sendCentralDataToPeripheral: " + address +" current queue size:"+messageQueue.size() + " tmpQueue size:" + tmpMessageQueue.size());
+                messageQueue.addAll(tmpMessageQueue);
+                this.mMessageSendMap.put(address, messageQueue);
+
+                if (this.mMessageSendMap.get(address).size() == tmpMessageQueue.size()) {
+                    executeSendCentralData(address); // trigger execute write when this is the first message in the queue.
                 }
             }
         }
     }
 
-    private void executeSendCentralData() {
-        synchronized (this.mMessageSendQueue) {
-            Log.d(TAG, "executeSendCentralData: current queue size:"+this.mMessageSendQueue.size());
-            if (this.mMessageSendQueue.size() != 0) {
-                NCMCMessageData msgInfo = this.mMessageSendQueue.get(0);
+    private void executeSendCentralData(String deviceAddress) {
+        if (this.mMessageSendMap.containsKey(deviceAddress)) {
+            List<NCMCMessageData> messageQueue = this.mMessageSendMap.get(deviceAddress);
+            Log.d(TAG, "executeSendCentralData: "+deviceAddress+" current queue size:"+messageQueue.size());
+            if (messageQueue.size() != 0) {
+                NCMCMessageData msgInfo = messageQueue.get(0);
                 NCMCPeripheralInfo targetInfo = this.mDiscoveredPeripherals.get(msgInfo.getDeviceUUID());
                 if (targetInfo != null && targetInfo.bluetoothGatt != null) {
                     byte[] dataToSend = msgInfo.getFullData();
