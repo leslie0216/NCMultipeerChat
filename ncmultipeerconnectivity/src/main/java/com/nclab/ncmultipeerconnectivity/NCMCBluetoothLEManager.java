@@ -1061,21 +1061,22 @@ import java.util.concurrent.ConcurrentHashMap;
         Integer centralMtu  = this.mCentralMTUs.get(centralAddress);
         if (mSendCharacteristic != null && centralDevice != null && centralMtu != null) {
             List<byte[]> msgs = makeMsg(message, centralMtu);
-            synchronized (mMessageSendQueue) {
-                Log.d(TAG, "sendPeripheralDataToCentral: current queue size:"  + mMessageSendQueue.size());
-                boolean shouldExecute = this.mMessageSendQueue.size() == 0;
+            List<NCMCMessageData> tmpMessageQueue = new LinkedList<>();
 
-                for (byte[] msg : msgs) {
-                    NCMCMessageData msgData = new NCMCMessageData(centralAddress, true);
-                    msgData.addData(msg);
-                    this.mMessageSendQueue.add(msgData);
-                }
-
-                if (shouldExecute) {
-                    executeSendPeripheralData();
-                }
+            for (byte[] msg : msgs) {
+                NCMCMessageData msgData = new NCMCMessageData(centralAddress, true);
+                msgData.addData(msg);
+                tmpMessageQueue.add(msgData);
             }
 
+            synchronized (mMessageSendQueue) {
+                Log.d(TAG, "sendPeripheralDataToCentral: current queue size:"  + mMessageSendQueue.size() + " tmpQueue size:" + tmpMessageQueue.size());
+                this.mMessageSendQueue.addAll(tmpMessageQueue);
+
+                if (this.mMessageSendQueue.size() == tmpMessageQueue.size()) {
+                    executeSendPeripheralData(); // trigger execute write when this is the first message in the queue.
+                }
+            }
         }
     }
 
