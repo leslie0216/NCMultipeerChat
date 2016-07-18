@@ -29,7 +29,6 @@ public class LobbyActivity extends Activity {
     private TextView txtPlayer4;
     private ImageButton btnStartGame;
     private ImageButton btnBack;
-    private Handler mTickHandler;
 
 
     private final IntentFilter m_intentFilter = new IntentFilter();
@@ -139,8 +138,6 @@ public class LobbyActivity extends Activity {
                 backToSettingActivity();
             }
         });
-
-        mTickHandler = new Handler();
 
         btnStartGame = (ImageButton)this.findViewById(R.id.btnStartGame);
         if (MultiplayerController.getInstance().isHost()) {
