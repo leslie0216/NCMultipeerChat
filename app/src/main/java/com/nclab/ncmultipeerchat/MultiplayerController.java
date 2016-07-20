@@ -136,7 +136,7 @@ public class MultiplayerController {
         initSessionCallback();
 
         String uuid = UUID.randomUUID().toString();
-        String suuid = uuid.substring(24);
+        String suuid = uuid.substring(34);
         String displayName = suuid + localName;
 
         NCMCPeerID peerID = new NCMCPeerID(displayName);
@@ -352,8 +352,8 @@ public class MultiplayerController {
 
     @NonNull
     public String stringForMCPeerDisplayName(String displayName) {
-        if (displayName != null && displayName.length() > 12) {
-            return displayName.substring(12);
+        if (displayName != null && displayName.length() > 2) {
+            return displayName.substring(2);
         }
 
         return "Unknown Player";

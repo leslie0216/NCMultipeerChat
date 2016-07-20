@@ -181,8 +181,10 @@ import java.util.concurrent.ConcurrentHashMap;
     public void disconnect() {
         if (isCentral()) {
             stopBrowsing();
-            for (NCMCPeripheralInfo info : this.mDiscoveredPeripherals.values()) {
-                disconnectToPeripheralByInfo(info);
+            if (this.mDiscoveredPeripherals != null && !this.mDiscoveredPeripherals.isEmpty()) {
+                for (NCMCPeripheralInfo info : this.mDiscoveredPeripherals.values()) {
+                    disconnectToPeripheralByInfo(info);
+                }
             }
         } else {
             stopAdvertising();
@@ -668,6 +670,7 @@ import java.util.concurrent.ConcurrentHashMap;
     };
 
     private void scanLeDevice(final boolean enable) {
+        Log.d(TAG, "scanLeDevice: " + enable);
         if (enable && !mIsBrowsingOrAdvertising) {
             // Stops scanning after a pre-defined scan period.
             mScanHandler.postDelayed(mScanRunnable, SCAN_PERIOD);
@@ -676,8 +679,10 @@ import java.util.concurrent.ConcurrentHashMap;
             mIsBrowsingOrAdvertising = true;
             mLEScanner.startScan(mFilters, mScanSettings, mScanCallback);
         } else {
-            mIsBrowsingOrAdvertising = false;
-            mLEScanner.stopScan(mScanCallback);
+            if (mIsBrowsingOrAdvertising) {
+                mIsBrowsingOrAdvertising = false;
+                mLEScanner.stopScan(mScanCallback);
+            }
         }
     }
 
@@ -935,7 +940,7 @@ import java.util.concurrent.ConcurrentHashMap;
                     if (preparedWrite) {
                         addWriteItemByteBuffer(device.getAddress(), characteristic.getUuid().toString(), value, true);
                     } else {
-                        processMsg(characteristic.getValue(), device.getAddress());
+                        processMsg(value, device.getAddress());
                     }
                 }
             }
@@ -967,7 +972,7 @@ import java.util.concurrent.ConcurrentHashMap;
             @Override
             public void onNotificationSent(BluetoothDevice device, int status) {
                 super.onNotificationSent(device, status);
-                Log.d(TAG, "onNotificationSent to " + device.getName() + " status : " + status);
+                Log.d(TAG, "onNotificationSent to " + device.getAddress() + " status : " + status);
                 synchronized (mMessageSendQueue) {
                     Log.d(TAG, "onNotificationSent: current queue size:"  + mMessageSendQueue.size());
                     if (mMessageSendQueue.size() != 0) {
@@ -1039,12 +1044,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
     public void stopAdvertising() {
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
-            scanLeDevice(false);
-            mScanHandler.removeCallbacks(mScanRunnable);
+            setIsAdvertise(false);
         }
     }
 
     private void setIsAdvertise(boolean enable) {
+        Log.d(TAG, "setIsAdvertise: " + enable);
         if (enable) {
             mIsBrowsingOrAdvertising = true;
             mAdvertiser.startAdvertising(mAdSettings, mAdData, mAdvertisingCallback);
@@ -1102,7 +1107,7 @@ import java.util.concurrent.ConcurrentHashMap;
     }
 
     protected void notifyDidReceiveInvitationFromPeer(NCMCPeerID peerID) {
-        if (this.mDiscoveredPeripherals != null) {
+        if (this.mPeripheralService != null) {
             this.mPeripheralService.notifyDidReceiveInvitationFromPeer(peerID);
         }
     }
