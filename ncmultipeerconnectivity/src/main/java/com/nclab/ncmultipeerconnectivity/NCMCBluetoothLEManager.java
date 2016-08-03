@@ -72,7 +72,7 @@ import java.util.concurrent.ConcurrentHashMap;
     private Handler mScanHandler;
     private ScanCallback mScanCallback;
     private BluetoothGattCallback mGattCallback;
-    private Hashtable<String, NCMCPeripheralInfo> mDiscoveredPeripherals = null; // key:device address/identifier
+    private ConcurrentHashMap<String, NCMCPeripheralInfo> mDiscoveredPeripherals = null; // key:device address/identifier
     private ConcurrentHashMap<String, List<NCMCMessageData>> mMessageSendMap = new ConcurrentHashMap<>();
     //endregion
 
@@ -378,7 +378,7 @@ import java.util.concurrent.ConcurrentHashMap;
         if (this.mDiscoveredPeripherals != null) {
             this.mDiscoveredPeripherals.clear();
         } else {
-            mDiscoveredPeripherals = new Hashtable<>();
+            mDiscoveredPeripherals = new ConcurrentHashMap<>();
         }
 
         this.mSession.setSelfAsCentral();
@@ -443,8 +443,7 @@ import java.util.concurrent.ConcurrentHashMap;
                             mCentralService.notifyFoundPeer(peerID);
                         }
                         // stop scan
-                        //mIsBrowsingOrAdvertising = false;
-                        //stopBrowsing();
+                        stopBrowsing();
                     }
                 } catch (NullPointerException ex) {
                     ex.printStackTrace();
@@ -630,6 +629,10 @@ import java.util.concurrent.ConcurrentHashMap;
                         info.mtu = mtu;
                         mDiscoveredPeripherals.put(gatt.getDevice().getAddress(), info);
 
+                        if (mMessageSendMap.containsKey(gatt.getDevice().getAddress())) {
+                            mMessageSendMap.remove(gatt.getDevice().getAddress());
+                        }
+
                         // send central info to peripheral and wait for peripheral confirm the connection
                         NCMCPeerID peerID = new NCMCPeerID(info.name, gatt.getDevice().getAddress(), (char)-1);
                         if (mSession != null) {
@@ -731,6 +734,16 @@ import java.util.concurrent.ConcurrentHashMap;
                 info.bluetoothGatt.disconnect();
                 info.bluetoothGatt.close();
                 info.bluetoothGatt = null;
+            }
+        }
+    }
+
+    public void enableHighTraffic(String deviceAddress) {
+        NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
+        if (info != null) {
+            if (info.bluetoothGatt != null) {
+                Log.d(TAG, "enableHighTraffic: "+deviceAddress);
+                info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
             }
         }
     }
@@ -988,8 +1001,8 @@ import java.util.concurrent.ConcurrentHashMap;
             @Override
             public void onMtuChanged(BluetoothDevice device, int mtu) {
                 super.onMtuChanged(device, mtu);
-                Log.d(TAG, "onMtuChanged: device : " + device.getName() + ", mtu : " + mtu);
-                if (!mCentralMTUs.containsKey(device.getAddress())) {
+                Log.d(TAG, "onMtuChanged: device : " + device.getAddress() + ", mtu : " + mtu);
+                if (mCentralMTUs.containsKey(device.getAddress())) {
                     mCentralMTUs.put(device.getAddress(), mtu);
                 }
             }
