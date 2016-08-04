@@ -21,5 +21,7 @@
     <string name="searchinggame">Searching for game&#8230;</string>
     <string name="empty">--empty--</string>
     <string name="readytogame">Ready to game</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
 
 </resources>

@@ -748,6 +748,16 @@ import java.util.concurrent.ConcurrentHashMap;
         }
     }
 
+    public void disableHighTraffic(String deviceAddress) {
+        NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
+        if (info != null) {
+            if (info.bluetoothGatt != null) {
+                Log.d(TAG, "enableHighTraffic: "+deviceAddress);
+                info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+            }
+        }
+    }
+
     public synchronized void sendCentralDataToPeripheral(byte[] message, String address, int mode) {
         NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(address);
         if (info != null) {

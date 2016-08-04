@@ -114,6 +114,14 @@ public class NCMCSession {
         }
     }
 
+    public void enableHighTraffic(NCMCPeerID peerID) {
+        NCMCBluetoothLEManager.getInstance().enableHighTraffic(peerID.identifier);
+    }
+
+    public void disableHighTraffic(NCMCPeerID peerID) {
+        NCMCBluetoothLEManager.getInstance().disableHighTraffic(peerID.identifier);
+    }
+
     protected void notifyPeerStateChanged(NCMCPeerID peerID, int state) {
         if (this.callback != null) {
             this.callback.didChangeState(NCMCSession.this, peerID, state);

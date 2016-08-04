@@ -36,9 +36,11 @@ public class MultiplayerController {
     public final static String BLE_BROADCAST_SCAN_TIMEOUT = "ncchat.nclab.com.BLE_BROADCAST_SCAN_TIMEOUT";
     public final static String BLE_BROADCAST_START_FAILED = "ncchat.nclab.com.BLE_BROADCAST_START_FAILED";
     public final static String BLE_BROADCAST_UPDATE_PLAYERLIST = "ncchat.nclab.com.BLE_BROADCAST_UPDATE_PLAYERLIST_";
+
     public final static String BLE_BROADCAST_RECEIVE_MESSAGE = "ncchat.nclab.com.BLE_BROADCAST_RECEIVE_MESSAGE_";
     public final static String BLE_BROADCAST_RECEIVE_MESSAGE_FROM_NAME = "ncchat.nclab.com.BLE_BROADCAST_RECEIVE_MESSAGE_FROM_NAME";
     public final static String BLE_BROADCAST_RECEIVE_MESSAGE_DATA = "ncchat.nclab.com.BLE_BROADCAST_RECEIVE_MESSAGE_DATA";
+    public final static String BLE_BROADCAST_RECEIVE_MESSAGE_TIME = "ncchat.nclab.com.BLE_BROADCAST_RECEIVE_MESSAGE_TIME";
 
     private NCMCSession currentSession;
     private NCMCCentralService currentCentralService;
@@ -320,6 +322,37 @@ public class MultiplayerController {
         }
     }
 
+    public void sendDataToAllPeer(byte[] msgData, int mode) {
+        for (NCMCPeerID peerID : this.currentSessionPlayerIDs) {
+            if (!peerID.getDisplayName().equalsIgnoreCase(this.currentSession.myPeerID.getDisplayName()))
+            {
+                Log.d(TAG, "sendDataToPeer: " + peerID.getDisplayName() + " msgData length: " + msgData.length);
+                byte[] data = packMessageWithType(MSG_CHAT_MSG, msgData);
+                List<NCMCPeerID> peerIDs = new LinkedList<>();
+                peerIDs.add(peerID);
+                this.currentSession.sendData(data, peerIDs, mode);
+            }
+        }
+    }
+
+    public void enableHighTraffic() {
+        for (NCMCPeerID peerID : this.currentSessionPlayerIDs) {
+            if (!peerID.getDisplayName().equalsIgnoreCase(this.currentSession.myPeerID.getDisplayName()))
+            {
+                this.currentSession.enableHighTraffic(peerID);
+            }
+        }
+    }
+
+    public void disableHighTraffic() {
+        for (NCMCPeerID peerID : this.currentSessionPlayerIDs) {
+            if (!peerID.getDisplayName().equalsIgnoreCase(this.currentSession.myPeerID.getDisplayName()))
+            {
+                this.currentSession.disableHighTraffic(peerID);
+            }
+        }
+    }
+
     public void gotoChatRoom() {
         if (this.currentCentralService != null) {
             this.currentCentralService.stopBrowsingForPeers();
@@ -391,6 +424,7 @@ public class MultiplayerController {
                 Intent i = new Intent(BLE_BROADCAST_RECEIVE_MESSAGE);
                 i.putExtra(BLE_BROADCAST_RECEIVE_MESSAGE_FROM_NAME, stringForMCPeerDisplayName(fromPeer.getDisplayName()));
                 i.putExtra(BLE_BROADCAST_RECEIVE_MESSAGE_DATA, data);
+                i.putExtra(BLE_BROADCAST_RECEIVE_MESSAGE_TIME, System.nanoTime()); // 1 millisecond = 1000000 nanosecond
                 broadcastStatus(i);
                 break;
             }
