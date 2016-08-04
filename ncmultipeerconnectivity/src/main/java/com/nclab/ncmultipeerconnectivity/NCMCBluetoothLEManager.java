@@ -739,21 +739,25 @@ import java.util.concurrent.ConcurrentHashMap;
     }
 
     public void enableHighTraffic(String deviceAddress) {
-        NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
-        if (info != null) {
-            if (info.bluetoothGatt != null) {
-                Log.d(TAG, "enableHighTraffic: "+deviceAddress);
-                info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+        if (isCentral()) {
+            NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
+            if (info != null) {
+                if (info.bluetoothGatt != null) {
+                    Log.d(TAG, "enableHighTraffic: " + deviceAddress);
+                    info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                }
             }
         }
     }
 
     public void disableHighTraffic(String deviceAddress) {
-        NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
-        if (info != null) {
-            if (info.bluetoothGatt != null) {
-                Log.d(TAG, "enableHighTraffic: "+deviceAddress);
-                info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+        if (isCentral()) {
+            NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
+            if (info != null) {
+                if (info.bluetoothGatt != null) {
+                    Log.d(TAG, "enableHighTraffic: " + deviceAddress);
+                    info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+                }
             }
         }
     }

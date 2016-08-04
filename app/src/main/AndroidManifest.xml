@@ -30,7 +30,10 @@
         <activity
             android:name=".ChatActivity"
             android:screenOrientation="landscape" />
-        <activity android:name=".PackageSizeActivity"
+        <activity
+            android:name=".PackageSizeActivity"
+            android:screenOrientation="landscape" />
+        <activity android:name=".PackageRateActivity"
             android:screenOrientation="landscape" />
     </application>
 

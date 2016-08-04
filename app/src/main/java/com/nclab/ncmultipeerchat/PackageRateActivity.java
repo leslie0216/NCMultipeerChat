@@ -5,9 +5,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.test.suitebuilder.TestMethod;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -21,8 +21,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 
-public class PackageSizeActivity extends Activity {
-    public static final String TAG = "PackageSizeActivity";
+public class PackageRateActivity extends Activity {
+    public static final String TAG = "PackageRateActivity";
     public static final int MaxPingCount = 30;
     private Button m_pintBtn;
     private TextView m_txtCurrentPing;
@@ -34,9 +34,13 @@ public class PackageSizeActivity extends Activity {
     private boolean m_isLogEnabled = false;
 
     private int m_messageSize;
+    private int m_packageRate; // how many package per second
+    private long m_lastServerBroadcastTime;
     private int m_totalCount;
     private int m_receivedCount;
     private Hashtable<Integer, PingInfo> m_pingDict = null;
+    private Handler m_pingHandler;
+    private Runnable timerRunnable;
 
     private NetworkLogger m_logger;
 
@@ -67,18 +71,17 @@ public class PackageSizeActivity extends Activity {
             }
         }
     };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_package_size);
+        setContentView(R.layout.activity_package_rate);
 
         String isHost = MultiplayerController.getInstance().isHost() ? "Yes" : "No";
-        ((TextView)findViewById(R.id.lbpsIsHost)).setText(isHost);
+        ((TextView)findViewById(R.id.lbprIsHost)).setText(isHost);
 
         m_isPing = false;
 
-        m_pintBtn = (Button)findViewById(R.id.btnpsStart);
+        m_pintBtn = (Button)findViewById(R.id.btnprStart);
 
         m_pintBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -95,13 +98,15 @@ public class PackageSizeActivity extends Activity {
             }
         });
 
-        m_messageSize = 0;
+        m_messageSize = 1;
 
         updatePackageSize();
+        updatePackageRate();
+        updateBandwidth();
 
-        m_txtCurrentPing = ((TextView)findViewById(R.id.lbpsCurrentPing));
-        m_txtReceivedCount = ((TextView)findViewById(R.id.lbpsReceivedCount));
-        m_txtTotalCount = ((TextView)findViewById(R.id.lbpsTotalCount));
+        m_txtCurrentPing = ((TextView)findViewById(R.id.lbprCurrentPing));
+        m_txtReceivedCount = ((TextView)findViewById(R.id.lbprReceivedCount));
+        m_txtTotalCount = ((TextView)findViewById(R.id.lbprTotalCount));
 
         updateStatus();
 
@@ -137,11 +142,11 @@ public class PackageSizeActivity extends Activity {
 
     private void updateStatus() {
         int connectedCnt = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
-        ((TextView)findViewById(R.id.lbpsNetworkStatus)).setText(String.valueOf(connectedCnt));
+        ((TextView)findViewById(R.id.lbprNetworkStatus)).setText(String.valueOf(connectedCnt));
     }
 
     private void updatePackageSize() {
-        ((TextView)findViewById(R.id.lbpsPackageSize)).setText(String.valueOf(getPackageSize()));
+        ((TextView)findViewById(R.id.lbprPackageSize)).setText(String.valueOf(getPackageSize()));
     }
 
     private int getPackageSize() {
@@ -157,13 +162,27 @@ public class PackageSizeActivity extends Activity {
         return size;
     }
 
+    private void updatePackageRate() {
+        ((TextView)findViewById(R.id.lbprPackageRate)).setText(String.valueOf(m_packageRate));
+    }
+
+    private void updateBandwidth() {
+        String bandwidth = String.valueOf(getBandwidth()) + " byte/s";
+        ((TextView)findViewById(R.id.lbprBandwith)).setText(bandwidth);
+    }
+
+    private double getBandwidth() {
+        int packageSize = getPackageSize();
+        return packageSize * m_packageRate; // b/s
+    }
+
     private void backToSettingActivity() {
         MultiplayerController.getInstance().disconnect();
 
         Intent intent = new Intent();
-        intent.setClass(PackageSizeActivity.this, SettingActivity.class);
-        PackageSizeActivity.this.startActivity(intent);
-        PackageSizeActivity.this.finish();
+        intent.setClass(PackageRateActivity.this, SettingActivity.class);
+        PackageRateActivity.this.startActivity(intent);
+        PackageRateActivity.this.finish();
     }
 
     private void handleMessage(byte[] data, String from, long receiveTime) {
@@ -190,6 +209,8 @@ public class PackageSizeActivity extends Activity {
 
                     if (m_isPing) {
                         updatePackageSize();
+                        updatePackageRate();
+                        updateBandwidth();
                         m_txtCurrentPing.setText(String.valueOf(timeInterval));
                         m_txtReceivedCount.setText(String.valueOf(m_receivedCount));
                         m_txtTotalCount.setText(String.valueOf(m_totalCount));
@@ -198,8 +219,6 @@ public class PackageSizeActivity extends Activity {
                             if (m_totalCount >= MaxPingCount && m_receivedCount >= MaxPingCount) {
                                 m_isPingEnabled = false;
                                 calculateResult();
-                            } else {
-                                doPing();
                             }
                         }
                     }
@@ -238,7 +257,10 @@ public class PackageSizeActivity extends Activity {
         m_totalCount = 0;
         m_receivedCount = 0;
         m_isPingEnabled = true;
+
         m_messageSize = 1;
+        m_packageRate = 1;
+        m_lastServerBroadcastTime = 0;
 
         if (m_isLogEnabled) {
             m_logger = new NetworkLogger(this, "");
@@ -246,12 +268,33 @@ public class PackageSizeActivity extends Activity {
 
         MultiplayerController.getInstance().enableHighTraffic();
 
-        doPing();
+        if (m_pingHandler == null) {
+            m_pingHandler = new Handler();
+        }
+
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (m_isPing && m_isPingEnabled && shouldBroadcast()) {
+                    doPing();
+                }
+
+                if (m_isPing) {
+                    m_pingHandler.postDelayed(this, 16);
+                }
+            }
+        };
+
+        m_pingHandler.postDelayed(timerRunnable, 0);
     }
 
     private void stopPing() {
         m_isPing = false;
         m_isPingEnabled = false;
+
+        if (m_pingHandler != null) {
+            m_pingHandler.removeCallbacks(timerRunnable);
+        }
 
         if (m_isLogEnabled && m_logger != null) {
             m_logger.flush();
@@ -329,16 +372,39 @@ public class PackageSizeActivity extends Activity {
         double std = Math.sqrt(sumOfSquaredDifferences / allTimes.size());
 
         if (m_isLogEnabled && m_logger != null) {
-            m_logger.write(getPackageSize() + "," + average + "," + std, true);
+            int connectedCnt = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
+            //packagesize, packagerate, bandwidth, client count, ping, std
+            m_logger.write(getPackageSize() + "," + m_packageRate + "," + getBandwidth() + "," + connectedCnt + "," + average + "," + std, true);
         }
 
         if (m_isPing) {
             m_pingDict.clear();
             m_receivedCount = 0;
             m_totalCount = 0;
-            m_messageSize += 1;
+            m_packageRate += 1;
             m_isPingEnabled = true;
-            doPing();
+            //doPing();
         }
+    }
+
+    private boolean shouldBroadcast() {
+        boolean rt = false;
+
+        long currentTime = System.nanoTime();
+        if (m_lastServerBroadcastTime == 0) {
+            m_lastServerBroadcastTime = currentTime;
+        }
+
+        double broadcastInterval = (1.0f/m_packageRate) * 1000000000.0; // 1 second = 1000000000 nano second
+        long broadcastTimeElapsed = (currentTime - m_lastServerBroadcastTime);
+
+        //
+
+        if(broadcastTimeElapsed > broadcastInterval) {
+            m_lastServerBroadcastTime = currentTime;
+            rt = true;
+        }
+
+        return rt;
     }
 }

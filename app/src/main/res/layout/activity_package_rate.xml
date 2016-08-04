@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.nclab.ncmultipeerchat.PackageRateActivity"
+    android:background="@android:color/holo_blue_light">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Status : "
+        android:id="@+id/textViewprstatus"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Is Host : "
+        android:id="@+id/textViewprishost"
+        android:layout_below="@+id/textViewprstatus"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:id="@+id/btnprStart"
+        android:layout_below="@+id/textViewprishost"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Connected"
+        android:id="@+id/lbprNetworkStatus"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/textViewprstatus" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Yes"
+        android:id="@+id/lbprIsHost"
+        android:layout_toEndOf="@+id/textViewprishost"
+        android:layout_above="@+id/btnprStart" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Package Size : "
+        android:id="@+id/textViewprpackagesize"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprPackageSize"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/textViewprpackagesize" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Current Ping : "
+        android:id="@+id/textViewprcurrentping"
+        android:layout_below="@+id/textViewprpackagesize"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprCurrentPing"
+        android:layout_below="@+id/lbprPackageSize"
+        android:layout_alignStart="@+id/lbprPackageSize" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Received Count : "
+        android:id="@+id/textViewreccount"
+        android:layout_below="@+id/textViewprcurrentping"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprReceivedCount"
+        android:layout_below="@+id/lbprCurrentPing"
+        android:layout_toEndOf="@+id/textViewreccount" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Total Count : "
+        android:id="@+id/textViewprtotalcount"
+        android:layout_below="@+id/textViewreccount"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprTotalCount"
+        android:layout_below="@+id/textViewreccount"
+        android:layout_toEndOf="@+id/textViewprpackagesize" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Package Rate : "
+        android:id="@+id/textViewpackagerate"
+        android:layout_below="@+id/textViewprtotalcount"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprPackageRate"
+        android:layout_below="@+id/lbprTotalCount"
+        android:layout_toEndOf="@+id/lbprTotalCount" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Bandwith : "
+        android:id="@+id/textView10"
+        android:layout_below="@+id/textViewpackagerate"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/lbprBandwith"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/textViewprpackagesize" />
+
+</RelativeLayout>
