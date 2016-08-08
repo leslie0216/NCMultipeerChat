@@ -211,7 +211,7 @@ public class PackageSizeActivity extends Activity {
                     mb.setIsReliable(message.getIsReliable());
                     mb.setMessage("");
 
-                    double responseTime = ((double)System.nanoTime())/1000000.0 - ((double)receiveTime) / 1000000.0;
+                    double responseTime = ((double)System.nanoTime())/1000000.0 - ((double)receiveTime) / 1000000.0; // to ms
                     mb.setResponseTime(responseTime);
 
                     Message.PingMessage msg = mb.build();
@@ -270,9 +270,11 @@ public class PackageSizeActivity extends Activity {
             tmp += "a";
         }
 
+        int token = m_totalCount+1;
+
         mb.setMessage(tmp);
 
-        mb.setToken(m_totalCount+1);
+        mb.setToken(token);
         mb.setMessageType(Message.PingMessage.MsgType.PING);
         mb.setResponseTime(0.0);
         mb.setIsReliable(false);
@@ -280,18 +282,18 @@ public class PackageSizeActivity extends Activity {
         Message.PingMessage msg = mb.build();
 
         long startTime = System.nanoTime();
-        Log.d(TAG, "doPing: message size: " + m_messageSize + ", total size: " + msg.toByteArray().length);
-        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataUnreliable);
+        Log.d(TAG, "doPing: message size: " + m_messageSize + ", total size: " + msg.toByteArray().length + ", packageSize: " + getPackageSize());
+        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataReliable);
 
         PingInfo info = new PingInfo();
         info.m_startTime = startTime;
-        info.m_token = m_totalCount+1;
+        info.m_token = token;
         info.m_totalCount = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
         info.m_currentCount = 0;
         info.m_number = m_totalCount + 1;
         m_totalCount += info.m_totalCount;
 
-        m_pingDict.put(m_totalCount, info);
+        m_pingDict.put(token, info);
 
         if (m_totalCount >= MaxPingCount) {
             m_isPingEnabled = false;

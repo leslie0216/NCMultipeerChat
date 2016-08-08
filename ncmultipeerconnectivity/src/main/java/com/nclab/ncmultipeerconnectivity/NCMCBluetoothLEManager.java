@@ -755,7 +755,7 @@ import java.util.concurrent.ConcurrentHashMap;
             NCMCPeripheralInfo info = this.mDiscoveredPeripherals.get(deviceAddress);
             if (info != null) {
                 if (info.bluetoothGatt != null) {
-                    Log.d(TAG, "enableHighTraffic: " + deviceAddress);
+                    Log.d(TAG, "disableHighTraffic: " + deviceAddress);
                     info.bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
                 }
             }
