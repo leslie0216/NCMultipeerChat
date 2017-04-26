@@ -20,20 +20,23 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.StringTokenizer;
 
 public class PackageRateActivity extends Activity {
     public static final String TAG = "PackageRateActivity";
-    public static final int MaxPingCount = 30;
+    public static final int MaxPingCount = 1;
+    public static final int MessageSize = 496;
+
     private Button m_pintBtn;
     private TextView m_txtCurrentPing;
     private TextView m_txtReceivedCount;
     private TextView m_txtTotalCount;
+    private TextView m_txtToken;
 
     private boolean m_isPing;
     private boolean m_isPingEnabled;
-    private boolean m_isLogEnabled = false;
+    private boolean m_isLogEnabled = true;
 
-    private int m_messageSize;
     private int m_packageRate; // how many package per second
     private long m_lastServerBroadcastTime;
     private int m_totalCount;
@@ -98,8 +101,6 @@ public class PackageRateActivity extends Activity {
             }
         });
 
-        m_messageSize = 1;
-
         updatePackageSize();
         updatePackageRate();
         updateBandwidth();
@@ -107,6 +108,7 @@ public class PackageRateActivity extends Activity {
         m_txtCurrentPing = ((TextView)findViewById(R.id.lbprCurrentPing));
         m_txtReceivedCount = ((TextView)findViewById(R.id.lbprReceivedCount));
         m_txtTotalCount = ((TextView)findViewById(R.id.lbprTotalCount));
+        m_txtToken = (TextView)findViewById(R.id.lbprToken);
 
         updateStatus();
 
@@ -150,12 +152,12 @@ public class PackageRateActivity extends Activity {
     }
 
     private int getPackageSize() {
-        int size = m_messageSize + 10;
-        if (m_messageSize >= 128) {
+        int size = MessageSize + 10;
+        if (MessageSize >= 128) {
             size += 1;
         }
 
-        if (m_messageSize >= 499) {
+        if (MessageSize >= 499) {
             size += 2;
         }
 
@@ -207,7 +209,7 @@ public class PackageRateActivity extends Activity {
                     m_pingDict.put(token, info);
                     m_receivedCount += 1;
 
-                    if (m_isPing) {
+                    if (true) {
                         updatePackageSize();
                         updatePackageRate();
                         updateBandwidth();
@@ -216,10 +218,13 @@ public class PackageRateActivity extends Activity {
                         m_txtTotalCount.setText(String.valueOf(m_totalCount));
 
                         if (info.m_totalCount == info.m_currentCount) {
+                            m_txtToken.setText(String.valueOf(token));
+                            calculateResultBytoken(token);
+                            /*
                             if (m_totalCount >= MaxPingCount && m_receivedCount >= MaxPingCount) {
                                 m_isPingEnabled = false;
                                 calculateResult();
-                            }
+                            }*/
                         }
                     }
 
@@ -258,8 +263,7 @@ public class PackageRateActivity extends Activity {
         m_receivedCount = 0;
         m_isPingEnabled = true;
 
-        m_messageSize = 1;
-        m_packageRate = 1;
+        m_packageRate = 60;
         m_lastServerBroadcastTime = 0;
 
         if (m_isLogEnabled) {
@@ -309,11 +313,11 @@ public class PackageRateActivity extends Activity {
         Message.PingMessage.Builder mb = Message.PingMessage.newBuilder();
 
         String tmp = "";
-        for (int i=0; i<m_messageSize; ++i) {
+        for (int i=0; i<MessageSize; ++i) {
             tmp += "a";
         }
 
-        int token = m_totalCount+1;
+        int token = ++m_totalCount;//+1;
 
         mb.setMessage(tmp);
 
@@ -325,22 +329,23 @@ public class PackageRateActivity extends Activity {
         Message.PingMessage msg = mb.build();
 
         long startTime = System.nanoTime();
-        Log.d(TAG, "doPing: message size: " + m_messageSize + ", total size: " + msg.toByteArray().length);
-        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataReliable);
+        Log.d(TAG, "doPing: message size: " + MessageSize + ", total size: " + msg.toByteArray().length);
+        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataUnreliable);
 
         PingInfo info = new PingInfo();
         info.m_startTime = startTime;
         info.m_token = token;
         info.m_totalCount = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
         info.m_currentCount = 0;
-        info.m_number = m_totalCount + 1;
-        m_totalCount += info.m_totalCount;
+        //info.m_number = m_totalCount + 1;
+        //m_totalCount += info.m_totalCount;
 
         m_pingDict.put(token, info);
 
+        /*
         if (m_totalCount >= MaxPingCount) {
             m_isPingEnabled = false;
-        }
+        }*/
     }
 
     private void calculateResult() {
@@ -408,5 +413,41 @@ public class PackageRateActivity extends Activity {
         }
 
         return rt;
+    }
+
+    private void calculateResultBytoken(int token) {
+        double totalTime = 0.0;
+        double min = 10000.0;
+        double max = 0.0;
+        List<Double> allTimes = new ArrayList<>();
+        PingInfo info = m_pingDict.get(token);
+
+        for (Double time : info.m_timeIntervals) {
+            totalTime += time;
+            if (time > max) {
+                max = time;
+            }
+            if (time < min) {
+                min = time;
+            }
+            allTimes.add(time);
+        }
+
+        double average = totalTime / allTimes.size();
+
+        double sumOfSquaredDifferences = 0.0;
+        for (Double time : allTimes) {
+            double difference = time - average;
+            sumOfSquaredDifferences += difference * difference;
+        }
+        double std = Math.sqrt(sumOfSquaredDifferences / allTimes.size());
+
+        if (m_isLogEnabled && m_logger != null) {
+            int connectedCnt = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
+            //token, packagesize, packagerate, bandwidth, client count, ping, std
+            m_logger.write(token + "," + getPackageSize() + "," + m_packageRate + "," + getBandwidth() + "," + connectedCnt + "," + average + "," + std, true);
+        }
+
+        //m_pingDict.remove(token);
     }
 }

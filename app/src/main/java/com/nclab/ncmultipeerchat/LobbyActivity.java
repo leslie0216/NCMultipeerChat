@@ -224,7 +224,7 @@ public class LobbyActivity extends Activity {
 
     private void goToChat() {
         Intent intent = new Intent();
-        intent.setClass(LobbyActivity.this, ChatActivity.class);
+        intent.setClass(LobbyActivity.this, PackageRateActivity.class);
         LobbyActivity.this.startActivity(intent);
         LobbyActivity.this.finish();
     }

@@ -73,7 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
     private ScanCallback mScanCallback;
     private BluetoothGattCallback mGattCallback;
     private ConcurrentHashMap<String, NCMCPeripheralInfo> mDiscoveredPeripherals = null; // key:device address/identifier
-    private ConcurrentHashMap<String, List<NCMCMessageData>> mMessageSendMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<NCMCMessageData>> mMessageSendMap = new ConcurrentHashMap<>();
     //endregion
 
     //region PERIPHERAL VARS
@@ -443,7 +443,7 @@ import java.util.concurrent.ConcurrentHashMap;
                             mCentralService.notifyFoundPeer(peerID);
                         }
                         // stop scan
-                        stopBrowsing();
+                        //stopBrowsing();
                     }
                 } catch (NullPointerException ex) {
                     ex.printStackTrace();
@@ -577,14 +577,16 @@ import java.util.concurrent.ConcurrentHashMap;
                 Log.d(TAG, "onCharacteristicWrite: " + characteristic.getUuid().toString() + " device = " + gatt.getDevice().getAddress() + " status = " + status);
                 try {
                     String deviceAddress = gatt.getDevice().getAddress();
-                    if (mMessageSendMap.containsKey(deviceAddress)) {
-                        List<NCMCMessageData> messageQueue = mMessageSendMap.get(deviceAddress);
+                    synchronized (mMessageSendMap) {
+                        if (mMessageSendMap.containsKey(deviceAddress)) {
+                            List<NCMCMessageData> messageQueue = mMessageSendMap.get(deviceAddress);
 
-                        if (messageQueue != null) {
-                            Log.d(TAG, "onCharacteristicWrite: "+ deviceAddress + " current queue size:" + messageQueue.size());
-                            messageQueue.remove(0);
-                            if (mMessageSendMap.get(deviceAddress).size() != 0) {
-                                executeSendCentralData(deviceAddress);
+                            if (messageQueue != null) {
+                                Log.d(TAG, "onCharacteristicWrite: " + deviceAddress + " current queue size:" + messageQueue.size());
+                                messageQueue.remove(0);
+                                if (mMessageSendMap.get(deviceAddress).size() != 0) {
+                                    executeSendCentralData(deviceAddress);
+                                }
                             }
                         }
                     }
@@ -770,7 +772,7 @@ import java.util.concurrent.ConcurrentHashMap;
                     mMessageSendMap.put(address, new LinkedList<NCMCMessageData>());
                 }
 
-                List<byte[]> msgs = makeMsg(message, MAX_MTU);
+                List<byte[]> msgs = makeMsg(message, info.mtu);
                 List<NCMCMessageData> tmpMessageQueue = new LinkedList<>();
 
                 for (byte[] msg : msgs) {
@@ -779,13 +781,15 @@ import java.util.concurrent.ConcurrentHashMap;
                     tmpMessageQueue.add(msgData);
                 }
 
-                List<NCMCMessageData> messageQueue = this.mMessageSendMap.get(address);
-                Log.d(TAG, "sendCentralDataToPeripheral: " + address +" current queue size:"+messageQueue.size() + " tmpQueue size:" + tmpMessageQueue.size());
-                messageQueue.addAll(tmpMessageQueue);
-                this.mMessageSendMap.put(address, messageQueue);
+                synchronized (mMessageSendMap) {
+                    List<NCMCMessageData> messageQueue = this.mMessageSendMap.get(address);
+                    messageQueue.addAll(tmpMessageQueue);
+                    this.mMessageSendMap.put(address, messageQueue);
+                    Log.d(TAG, "sendCentralDataToPeripheral: " + address + " current queue size:" + messageQueue.size() + " tmpQueue size:" + tmpMessageQueue.size());
 
-                if (this.mMessageSendMap.get(address).size() == tmpMessageQueue.size()) {
-                    executeSendCentralData(address); // trigger execute write when this is the first message in the queue.
+                    if (this.mMessageSendMap.get(address).size() == tmpMessageQueue.size()) {
+                        executeSendCentralData(address); // trigger execute write when this is the first message in the queue.
+                    }
                 }
             }
         }
@@ -802,7 +806,7 @@ import java.util.concurrent.ConcurrentHashMap;
                     byte[] dataToSend = msgInfo.getFullData();
 
                     if (msgInfo.isReliable && targetInfo.writeWithResponseCharacteristic != null) {
-                        targetInfo.writeWithoutResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                        targetInfo.writeWithResponseCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                         targetInfo.writeWithResponseCharacteristic.setValue(dataToSend);
                         targetInfo.bluetoothGatt.writeCharacteristic(targetInfo.writeWithResponseCharacteristic);
                         Log.d(TAG, "sendDataToPeripheral: "+targetInfo.device.getAddress()+" WithResponse: byteMsg size :" + dataToSend.length);

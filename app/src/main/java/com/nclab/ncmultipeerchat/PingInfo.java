@@ -12,7 +12,7 @@ public class PingInfo {
     public List<Double> m_timeIntervals;
     public int m_totalCount;
     public int m_currentCount;
-    public int m_number;
+    //public int m_number;
 
     PingInfo() {
         m_timeIntervals = new ArrayList<>();

@@ -31,7 +31,7 @@ public class PackageSizeActivity extends Activity {
 
     private boolean m_isPing;
     private boolean m_isPingEnabled;
-    private boolean m_isLogEnabled = false;
+    private boolean m_isLogEnabled = true;
 
     private int m_messageSize;
     private int m_totalCount;
@@ -283,14 +283,14 @@ public class PackageSizeActivity extends Activity {
 
         long startTime = System.nanoTime();
         Log.d(TAG, "doPing: message size: " + m_messageSize + ", total size: " + msg.toByteArray().length + ", packageSize: " + getPackageSize());
-        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataReliable);
+        MultiplayerController.getInstance().sendDataToAllPeer(msg.toByteArray(), NCMCSession.NCMCSessionSendDataUnreliable);
 
         PingInfo info = new PingInfo();
         info.m_startTime = startTime;
         info.m_token = token;
         info.m_totalCount = MultiplayerController.getInstance().getCurrentSession().getConnectedPeers().size();
         info.m_currentCount = 0;
-        info.m_number = m_totalCount + 1;
+        //info.m_number = m_totalCount + 1;
         m_totalCount += info.m_totalCount;
 
         m_pingDict.put(token, info);
